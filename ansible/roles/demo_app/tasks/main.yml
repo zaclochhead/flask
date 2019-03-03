@@ -1,0 +1,37 @@
+---
+- name: install webserver packages
+# with items loop runs the task on multiple items
+# state present means use latest version and update_cache means do apt-get update first
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - python-pip
+    - python-virtualenv
+    - python-mysqldb
+
+# copy the app in to the web server, mode sets the permissions
+- name: copy demo app source
+  copy: src=demo/app/ dest=/var/www/demo mode=0755
+  notify: restart apache2
+
+# copy the config file for apache
+- name: copy apache virtual host config
+  copy: src=demo/demo.conf dest=/etc/apache2/sites-available mode=0755
+  notify: restart apache2
+
+# install python packages using the ansible pip module
+# creates a venv in the app folder as well
+- name: install packages for the python web server
+  pip: requirements=/var/www/demo/requirements.txt virtualenv=/var/www/demo/.venv
+  notify: restart apache2
+
+  # put a symlink to our site in the site-enabled folder
+- name: activate our apache site
+  file: src=/etc/apache2/sites-available/demo.conf dest=/etc/apache2/sites-enabled/demo.conf state=link
+  notify: restart apache2
+
+
+
+
+# apache works by putting all site config files in the 'sites-available' folder
+# and the sites that we want to serve are symbolic linked into the sites-enabled folder
+# (we put symbolic links in the sites-enabled folder to our sites-available folder to serve the app)

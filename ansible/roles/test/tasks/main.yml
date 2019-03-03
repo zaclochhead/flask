@@ -1,0 +1,15 @@
+---
+# tasks file for test
+# copy all files then replace the line in the host
+- name: retrieve all check files
+    command: find /etc/sensu/check . -name "*.json"
+    register: check_files
+
+- name: replace stuff
+    replace:
+      path: {{ item }}
+      regexp: "control"
+      replace: "bin/activate"
+      dest: "bin"
+  with_items:
+    - {{ check_files }}

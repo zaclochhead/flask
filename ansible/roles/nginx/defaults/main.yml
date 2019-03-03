@@ -1,0 +1,6 @@
+---
+# defaults file for nginx
+sites: # defining a dictionary to define nginx values for multiple sites
+  myapp:
+    frontend: 80
+    backend: 80

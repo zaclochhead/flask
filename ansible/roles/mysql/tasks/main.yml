@@ -1,0 +1,37 @@
+---
+# tasks file for mysql
+- name: install mysql-server
+  apt: name={{item}} state=present update_cache=yes # use the apt ansible module to download the packages we need on to the loadbalancer server
+  with_items:
+    - mysql-server
+    - python-mysqldb
+  # state present means use latest version and update_cache means do apt-get update first
+  
+# change a line in the mysql config file so it listens on all ports
+- name: ensure mysql listening on all ports
+  # replace the line starting with bind address 
+  lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address 
+              line="bind-address= {{ ansible_eth0.ipv4.address}} "
+            # this uses an ansible fact which gathers info about the host
+            # we're deploying to ( can see through ansible -m setup hostname)
+            # this uses the ipv4 address of eth0 interface on the target
+            # host as the mysql listen address (rather then listen on 
+            # 0.0.0.0 for all available interfaces)
+  notify: restart mysql
+
+# we need to ensure its started after we do a restart otherwise,
+# if we screw up something in mysql and run the playbook, the first time
+# the screw up will be deployed, and the second time it won't be able to 
+# start and the playbook will keep exiting. We won't be able to deploy new
+# changes because mysql will keep failing to start before we get to the 
+# restart task
+- name: ensure mysql started
+  service: name=mysql state=started enabled=yes
+
+- name: create db for the app
+  mysql_db: name={{ db_name }} state=present
+
+
+- name: create a user for the db with access to all tables
+  mysql_user: name={{ db_user_name }} password={{ db_user_pass }} 
+              priv={{ db_name }}.*:ALL host='%' state=present

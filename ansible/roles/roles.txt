@@ -1,0 +1,8 @@
+ansible roles make it easier to re-use playbooks for servers that 
+may want to deploy the same service with different configurations. 
+With the playbooks with tasks, all the tasks are executed specifically for 
+the specified hosts. With roles, it lays out a foundation to deploy the service
+and then can have specific configuration for different hosts. 
+Ex - we have a mysql role for people that want to install mysql onto 
+their hosts, rather than a database playbook to configure mysql specifically
+for the database host.

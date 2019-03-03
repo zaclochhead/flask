@@ -1,0 +1,32 @@
+---
+# tasks file for apache2
+- name: install webserver packages
+# with items loop runs the task on multiple items
+# state present means use latest version and update_cache means do apt-get update first
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - apache2
+    - libapache2-mod-wsgi
+
+# runs apache 2 on the server if not already running
+- name: ensure apache2 started
+  service: name=apache2 state=started enabled=yes
+
+- name: ensure mod-wsgi enabled
+  apache2_module: state=present name=wsgi  # state present here means to ensure the module is enabled
+  notify: restart apache2 # whenever there's a change to this task
+  # the notify is triggered and runs the restart apache2 handler,
+  # this is because the webserver needs to be restarted to enable wsgi
+  # if the state of wsgi is already enabled, the task won't change and 
+  # the notify won't get triggered
+
+- name: de-activate default apache site
+  # remove the symolic link to the default apache page
+  file: path=/etc/apache2/sites-enabled/000-default.conf state=absent # file modifies file properties on the target host
+  notify: restart apache2
+
+
+
+# apache works by putting all site config files in the 'sites-available' folder
+# and the sites that we want to serve are symbolic linked into the sites-enabled folder
+# (we put symbolic links in the sites-enabled folder to our sites-available folder to serve the app)

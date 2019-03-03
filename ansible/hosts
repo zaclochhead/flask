@@ -1,0 +1,15 @@
+# inventory file is for specifying hosts and groups that ansible can work against
+# loadbalancer group has one host called lb01
+[loadbalancer]
+docker_lb01_1 ansible_connection=docker
+
+[webserver]
+docker_app01_1 ansible_connection=docker
+docker_app02_1 ansible_connection=docker
+
+[database]
+docker_db01_1 ansible_connection=docker
+
+## host for controlling and managing and doing the ansible stuff
+[control]
+control ansible_connection=local # tell ansible the control host is the local host

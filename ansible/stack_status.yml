@@ -1,0 +1,43 @@
+# checks the status of all of our hosts
+---
+- hosts: loadbalancer
+  tasks:
+    - name: verify nginx service
+      command: service nginx status
+
+    - name: verify nginx is listening on port 80
+      wait_for: port=80 timeout=20 # attempts to connect to the specified port
+      # and waits until it either connects or times out
+
+- hosts: webserver
+  tasks:
+    - name: verify apache2 service
+      command: service apache2 status
+
+    - name: verify apache2 is listening on port 80
+      wait_for: port=80 timeout=20
+
+- hosts: database
+  tasks:
+    - name: verify mysql service
+      command: service mysql status
+
+    - name: verify mysql is listening on port 3306
+      wait_for: port=3306 timeout=20
+
+
+## end to end test run from the control host to see we get the correct 
+# content back from our hosts
+# we can use the uri mdule for this
+- hosts: control
+  tasks:
+    - name: verify end-to-end response
+      uri: url=http//{{item}} return_content=yes # hits the host and returns the response
+      with_items: groups.loadbalancer # check loadbalancer returning correct content
+      register: lb_index # save the returned content here
+
+
+    - fail: msg="index failed to return content" #fails when condition false
+      when: :"'Hello, from sunny' not in item.content"
+      with_items: "{{lb_index.results}}"
+4

@@ -1,0 +1,8 @@
+---
+- hosts: database
+  roles:
+    # we can define the role to run as a dict where the roles key says 
+    # the role to run and the other keys are variables that are injected
+    # into the string interpolation part of the role
+    - { roles: mysql, db_name: demo, db_user_name: demo, 
+        db_user_pass: demo, db_user_host: '%' }

@@ -1,0 +1,37 @@
+# stack restart is used for getting our servers into a stable state
+# if something screwy starts happenning
+# we want to stop things in a logical order, 
+# load balancer first, then webserver then database since 
+# the webserver will be dependent on the db
+---
+# stop the loadbalancer and webserver
+- hosts: loadbalancer
+  become: true
+  tasks:
+    - service: name=nginx state=stopped
+
+- hosts: webserver
+  become: true
+  tasks:
+    - service: name=apache2 state=stopped
+    - wait_for: port=80 state=stopped # waits for the apache2 service on port 80 to be stopped before moving on
+  
+# restart mysql, we can use restart here since its the last server that needs 
+# to be stopped and first to be started
+- hosts: database
+  become: true
+  tasks:
+    - service: name=mysql state=restarted
+    - wait_for: port=3306 state=started #wait for the mysql service to start on port 3306 before moving on
+
+# start back up the loadbalancer and webserver in a logical order
+- hosts: webserver
+  become: true
+  tasks:
+    - service: name=apache2 state=started
+
+- hosts: loadbalancer
+  become: true
+  tasks:
+    - service: name=nginx state=started
+

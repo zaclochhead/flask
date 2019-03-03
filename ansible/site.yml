@@ -1,0 +1,7 @@
+---  # include can include a playbook within another playbook
+     # or include handlers, tasks etc
+- include: control.yml
+- include: database.yml
+- include: webserver.yml
+- include: loadbalancer.yml 
+# this runs all of the content in the included files

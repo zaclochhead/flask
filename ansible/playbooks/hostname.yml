@@ -1,0 +1,8 @@
+# plays are a list of hosts and commands to run against each host
+# we don't get back the result of the command, just if it ran successfully
+---
+  - hosts: webserver # the target hosts for the play
+    tasks: # tasks to execute for this play
+      - name: get server name # change the name of the command
+        command: hostname # run the hostname command for the command task
+

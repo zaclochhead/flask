@@ -1,0 +1,28 @@
+version: '2'
+services:
+  lb01:
+    build:
+      context: .
+    stdin_open: true
+    tty: true
+    container_name: "lb01"
+  app01:
+    build:
+      context: .
+    stdin_open: true
+    tty: true
+    container_name: "app01"
+  app02:
+    build:
+      context: .
+    stdin_open: true
+    tty: true
+    container_name: "app02"
+  db01:
+    build:
+      context: .
+    stdin_open: true
+    tty: true
+    container_name: "db01"
+
+

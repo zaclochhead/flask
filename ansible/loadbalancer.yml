@@ -1,0 +1,5 @@
+---
+- hosts: loadbalancer
+  #become: true #tells ansible to use sudo when executing the play
+  roles:
+    - nginx

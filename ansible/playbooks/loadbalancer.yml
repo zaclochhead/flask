@@ -1,0 +1,37 @@
+---
+- hosts: loadbalancer
+  #become: true #tells ansible to use sudo when executing the play
+  tasks:
+    - name: install tools
+      apt: name={{item}} state=present update_cache=yes
+      with_items:
+        - python-httplib2 # we need this to test if we're returning the correct content from the webservers
+       # use this in conjunction with ansible uri
+
+    - name: install nginx
+      apt: name=nginx state=present update_cache=yes # use the apt ansible module to download the packages we need on to the loadbalancer server
+      # state present means use latest version and update_cache means do apt-get update first
+
+    - name: ensure nginx started
+      service: name=nginx state=started enabled=yes # checks that the service is running and if not, it starts the service
+      
+    # configure nginx to point to our sites
+    - name: configure nginx site
+      template: src=templates/nginx.conf.j2 dest=/etc/nginx/sites-available/demo mode=0644
+      notify: restart nginx
+
+
+    - name: de-activate default nginx site
+      # remove the symolic link to the default apache page
+      file: path=/etc/nginx/sites-enabled/default state=absent # file modifies file properties on the target host
+      notify: restart nginx
+
+      # put a symlink to our site in the site-enabled folder
+    - name: activate our nginx site
+      file: src=/etc/nginx/sites-available/demo dest=/etc/nginx/sites-enabled/demo state=link
+      notify: restart nginx
+
+
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted

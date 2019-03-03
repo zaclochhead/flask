@@ -1,0 +1,27 @@
+---
+- hosts: database
+  tasks:
+    - name: install mysql-server
+      apt: name={{item}} state=present update_cache=yes # use the apt ansible module to download the packages we need on to the loadbalancer server
+      with_items:
+        - mysql-server
+        - python-mysqldb
+      # state present means use latest version and update_cache means do apt-get update first
+      
+    # change a line in the mysql config file so it listens on all ports
+    - name: ensure mysql listening on all ports
+      # replace the line starting with bind address 
+      lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address 
+                  line="bind-address= 0.0.0.0"
+      notify: restart mysql
+  
+    - name: create db for the app
+      mysql_db: name=demo state=present
+
+
+    - name: create a user for the db with access to all tables
+      mysql_user: name=demo password=demo priv=demo.*:ALL host='%' state=present
+
+  handlers:
+    - name: restart mysql
+      service: name=mysql state=restarted

@@ -1,0 +1,63 @@
+---
+- hosts: docker_app02_1
+  #become: true #tells ansible to use sudo when executing the play
+  tasks:
+    - name: install webserver packages
+    # with items loop runs the task on multiple items
+    # state present means use latest version and update_cache means do apt-get update first
+      apt: name={{item}} state=present update_cache=yes
+      with_items:
+        - apache2
+        - libapache2-mod-wsgi
+        - python-pip
+        - python-virtualenv
+        - python-mysqldb
+    
+    # runs apache 2 on the server if not already running
+    - name: ensure apache2 started
+      service: name=apache2 state=started enabled=yes
+    
+    - name: ensure mod-wsgi enabled
+      apache2_module: state=present name=wsgi  # state present here means to ensure the module is enabled
+      notify: restart apache2 # whenever there's a change to this task
+      # the notify is triggered and runs the restart apache2 handler,
+      # this is because the webserver needs to be restarted to enable wsgi
+      # if the state of wsgi is already enabled, the task won't change and 
+      # the notify won't get triggered
+    
+    # copy the app in to the web server, mode sets the permissions
+    - name: copy demo app source
+      copy: src=demo/app/ dest=/var/www/demo mode=0755
+      notify: restart apache2
+
+    # copy the config file for apache
+    - name: copy apache virtual host config
+      copy: src=demo/demo.conf dest=/etc/apache2/sites-available mode=0755
+      notify: restart apache2
+
+    # install python packages using the ansible pip module
+    # creates a venv in the app folder as well
+    - name: install packages for the python web server
+      pip: requirements=/var/www/demo/requirements.txt virtualenv=/var/www/demo/.venv
+      notify: restart apache2
+
+
+    - name: de-activate default apache site
+      # remove the symolic link to the default apache page
+      file: path=/etc/apache2/sites-enabled/000-default.conf state=absent # file modifies file properties on the target host
+      notify: restart apache2
+
+      # put a symlink to our site in the site-enabled folder
+    - name: activate our apache site
+      file: src=/etc/apache2/sites-available/demo.conf dest=/etc/apache2/sites-enabled/demo.conf state=link
+      notify: restart apache2
+
+  # handler to restart apache2
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+
+
+# apache works by putting all site config files in the 'sites-available' folder
+# and the sites that we want to serve are symbolic linked into the sites-enabled folder
+# (we put symbolic links in the sites-enabled folder to our sites-available folder to serve the app)
